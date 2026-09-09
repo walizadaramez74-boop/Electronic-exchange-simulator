@@ -131,3 +131,39 @@ def test_unfilled_market_order_does_not_rest():
     assert market_buy.quantity == 20
     assert not engine.order_book.bids
     assert not engine.order_book.asks
+    
+    
+def test_cancel_buy_order():
+    engine = MatchingEngine()
+
+    buy_1 = Order(1, "BUY", "LIMIT", 50, 100.0, 1)
+    buy_2 = Order(2, "BUY", "LIMIT", 40, 100.0, 2)
+
+    engine.process_order(buy_1)
+    engine.process_order(buy_2)
+
+    result = engine.cancel_order(1)
+
+    assert result is True
+    assert len(engine.order_book.bids[100.0]) == 1
+    assert engine.order_book.bids[100.0][0].order_id == 2
+
+
+def test_cancel_order_removes_empty_price_level():
+    engine = MatchingEngine()
+
+    sell_order = Order(1, "SELL", "LIMIT", 50, 101.0, 1)
+    engine.process_order(sell_order)
+
+    result = engine.cancel_order(1)
+
+    assert result is True
+    assert 101.0 not in engine.order_book.asks
+
+
+def test_cancel_nonexistent_order():
+    engine = MatchingEngine()
+
+    result = engine.cancel_order(999)
+
+    assert result is False

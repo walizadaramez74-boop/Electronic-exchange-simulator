@@ -19,6 +19,9 @@ class MatchingEngine:
         else:
             raise ValueError("Order side must be BUY or SELL")
 
+    def cancel_order(self, order_id):
+        return self.order_book.cancel_order(order_id)
+
     def _process_buy_order(self, order):
 
         while order.quantity > 0 and self.order_book.asks:

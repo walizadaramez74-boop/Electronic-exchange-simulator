@@ -27,3 +27,19 @@ class OrderBook:
             return None
 
         return min(self.asks.keys())
+
+    def cancel_order(self, order_id):
+        for side in (self.bids, self.asks):
+            for price in list(side.keys()):
+                orders = side[price]
+
+                for order in list(orders):
+                    if order.order_id == order_id:
+                        orders.remove(order)
+
+                        if not orders:
+                            del side[price]
+
+                        return True
+
+        return False
