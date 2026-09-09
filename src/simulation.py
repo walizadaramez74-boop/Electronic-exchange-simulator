@@ -120,7 +120,7 @@ def size_bucket(quantity):
         return "LARGE"
 
 
-def run_experiment(scenario, number_of_orders=10000, seed=42):
+def run_experiment(scenario, number_of_orders=100000, seed=42):
     rng = random.Random(seed)
     results = []
 
@@ -242,13 +242,13 @@ def save_summary(summary):
 if __name__ == "__main__":
     deep_results = run_experiment(
         "DEEP",
-        number_of_orders=10000,
+        number_of_orders=100000,
         seed=42
     )
 
     thin_results = run_experiment(
         "THIN",
-        number_of_orders=10000,
+        number_of_orders=100000,
         seed=42
     )
 
