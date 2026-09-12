@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Electronic Exchange Simulator</title>
+</head>
+
+<body>
+
+    <h1>Electronic Exchange Simulator</h1>
+
+    <p>
+        Interactive limit-order-book simulator built with Python and FastAPI.
+    </p>
+
+    <h2>Submit Order</h2>
+
+    <form id="order-form">
+
+        <label for="side">Side:</label>
+        <select id="side">
+            <option value="BUY">Buy</option>
+            <option value="SELL">Sell</option>
+        </select>
+
+        <label for="order-type">Order Type:</label>
+        <select id="order-type">
+            <option value="LIMIT">Limit</option>
+            <option value="MARKET">Market</option>
+        </select>
+
+        <label for="quantity">Quantity:</label>
+        <input
+            id="quantity"
+            type="number"
+            min="1"
+            required
+        >
+
+        <label for="price">Price:</label>
+        <input
+            id="price"
+            type="number"
+            step="0.01"
+            min="0"
+        >
+
+        <button type="submit">
+            Submit Order
+        </button>
+
+    </form>
+
+    <h2>Market</h2>
+
+    <p>
+        Best Bid:
+        <strong id="best-bid">-</strong>
+    </p>
+
+    <p>
+        Best Ask:
+        <strong id="best-ask">-</strong>
+    </p>
+
+    <h2>Order Book</h2>
+
+    <div>
+        <h3>Bids</h3>
+        <div id="bids"></div>
+    </div>
+
+    <div>
+        <h3>Asks</h3>
+        <div id="asks"></div>
+    </div>
+
+    <h2>Trades</h2>
+
+    <div id="trades"></div>
+
+<script>
+    const form = document.getElementById("order-form");
+    const sideInput = document.getElementById("side");
+    const orderTypeInput = document.getElementById("order-type");
+    const quantityInput = document.getElementById("quantity");
+    const priceInput = document.getElementById("price");
+
+    const bestBid = document.getElementById("best-bid");
+    const bestAsk = document.getElementById("best-ask");
+    const bidsContainer = document.getElementById("bids");
+    const asksContainer = document.getElementById("asks");
+    const tradesContainer = document.getElementById("trades");
+
+
+    function updatePriceInput() {
+        if (orderTypeInput.value === "MARKET") {
+            priceInput.value = "";
+            priceInput.disabled = true;
+        } else {
+            priceInput.disabled = false;
+        }
+    }
+
+
+    async function submitOrder(event) {
+        event.preventDefault();
+
+        const orderType = orderTypeInput.value;
+
+        const order = {
+            side: sideInput.value,
+            order_type: orderType,
+            quantity: Number(quantityInput.value),
+            price:
+                orderType === "LIMIT"
+                    ? Number(priceInput.value)
+                    : null
+        };
+
+        const response = await fetch("/orders", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(order)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            alert(result.detail || "Order could not be submitted.");
+            return;
+        }
+
+        console.log("Order response:", result);
+
+        quantityInput.value = "";
+
+        if (orderType === "LIMIT") {
+            priceInput.value = "";
+        }
+
+        await refreshMarket();
+    }
+
+
+    async function loadOrderBook() {
+        const response = await fetch("/orderbook");
+        const data = await response.json();
+
+        bestBid.textContent =
+            data.best_bid === null
+                ? "-"
+                : data.best_bid.toFixed(2);
+
+        bestAsk.textContent =
+            data.best_ask === null
+                ? "-"
+                : data.best_ask.toFixed(2);
+
+        bidsContainer.innerHTML = "";
+        asksContainer.innerHTML = "";
+
+        if (data.bids.length === 0) {
+            bidsContainer.innerHTML = "<p>No bids</p>";
+        } else {
+            for (const level of data.bids) {
+                const row = document.createElement("p");
+
+                row.textContent =
+                    `${level.total_quantity} @ ${level.price.toFixed(2)}`;
+
+                bidsContainer.appendChild(row);
+            }
+        }
+
+        if (data.asks.length === 0) {
+            asksContainer.innerHTML = "<p>No asks</p>";
+        } else {
+            for (const level of data.asks) {
+                const row = document.createElement("p");
+
+                row.textContent =
+                    `${level.total_quantity} @ ${level.price.toFixed(2)}`;
+
+                asksContainer.appendChild(row);
+            }
+        }
+    }
+
+
+    async function loadTrades() {
+        const response = await fetch("/trades");
+        const trades = await response.json();
+
+        tradesContainer.innerHTML = "";
+
+        if (trades.length === 0) {
+            tradesContainer.innerHTML = "<p>No trades yet</p>";
+            return;
+        }
+
+        for (const trade of trades.slice().reverse()) {
+            const row = document.createElement("p");
+
+            row.textContent =
+                `${trade.quantity} @ ${trade.price.toFixed(2)} ` +
+                `(Buy #${trade.buy_order_id}, Sell #${trade.sell_order_id})`;
+
+            tradesContainer.appendChild(row);
+        }
+    }
+
+
+    async function refreshMarket() {
+        await loadOrderBook();
+        await loadTrades();
+    }
+
+
+    form.addEventListener("submit", submitOrder);
+
+    orderTypeInput.addEventListener(
+        "change",
+        updatePriceInput
+    );
+
+    updatePriceInput();
+    refreshMarket();
+</script>
+
+</body>
+</html>
+
