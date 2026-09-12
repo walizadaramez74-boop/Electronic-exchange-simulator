@@ -4,7 +4,124 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+
     <title>Electronic Exchange Simulator</title>
+
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: Arial, sans-serif;
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 40px 24px;
+        background: #0f172a;
+        color: #e2e8f0;
+    }
+
+    h1 {
+        margin-bottom: 6px;
+    }
+
+    h2 {
+        margin-top: 32px;
+        border-bottom: 1px solid #334155;
+        padding-bottom: 8px;
+    }
+
+    h3 {
+        margin-bottom: 10px;
+    }
+
+    p {
+        color: #cbd5e1;
+    }
+
+    form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: end;
+        padding: 20px;
+        background: #1e293b;
+        border-radius: 10px;
+    }
+
+    label {
+        font-size: 14px;
+        font-weight: bold;
+    }
+
+    select,
+    input,
+    button {
+        padding: 10px 12px;
+        border-radius: 6px;
+        border: 1px solid #475569;
+        font-size: 14px;
+    }
+
+    select,
+    input {
+        background: #0f172a;
+        color: #e2e8f0;
+    }
+
+    button {
+        background: #e2e8f0;
+        color: #0f172a;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    button:hover {
+        opacity: 0.9;
+    }
+
+    #best-bid,
+    #best-ask {
+        font-size: 18px;
+    }
+
+    #bids,
+    #asks,
+    #trades {
+        background: #1e293b;
+        padding: 16px;
+        border-radius: 8px;
+        min-height: 60px;
+    }
+
+    #bids p,
+    #asks p,
+    #trades p {
+        margin: 6px 0;
+        font-family: monospace;
+    }
+
+.management-panel {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    gap: 16px;
+    padding: 20px;
+    background: #1e293b;
+    border-radius: 10px;
+}
+
+.management-panel div {
+    display: flex;
+    gap: 10px;
+    align-items: end;
+}
+
+#status-message {
+    min-height: 20px;
+    font-family: monospace;
+}
+</style>
 </head>
 
 <body>
@@ -52,7 +169,29 @@
         </button>
 
     </form>
+<h2>Manage Orders</h2>
 
+<div class="management-panel">
+    <div>
+        <label for="cancel-order-id">Order ID:</label>
+        <input
+            id="cancel-order-id"
+            type="number"
+            min="1"
+            placeholder="e.g. 3"
+        >
+
+        <button id="cancel-order-button">
+            Cancel Order
+        </button>
+    </div>
+
+    <button id="reset-button">
+        Reset Exchange
+    </button>
+</div>
+
+<p id="status-message"></p>
     <h2>Market</h2>
 
     <p>
@@ -93,7 +232,17 @@
     const bidsContainer = document.getElementById("bids");
     const asksContainer = document.getElementById("asks");
     const tradesContainer = document.getElementById("trades");
+const cancelOrderInput =
+    document.getElementById("cancel-order-id");
 
+const cancelOrderButton =
+    document.getElementById("cancel-order-button");
+
+const resetButton =
+    document.getElementById("reset-button");
+
+const statusMessage =
+    document.getElementById("status-message");
 
     function updatePriceInput() {
         if (orderTypeInput.value === "MARKET") {
@@ -214,7 +363,48 @@
         }
     }
 
+async function cancelOrder() {
+    const orderId = Number(cancelOrderInput.value);
 
+    if (!orderId) {
+        statusMessage.textContent =
+            "Enter an order ID to cancel.";
+        return;
+    }
+
+    const response = await fetch(`/orders/${orderId}`, {
+        method: "DELETE"
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+        statusMessage.textContent =
+            result.detail || "Order could not be cancelled.";
+        return;
+    }
+
+    statusMessage.textContent =
+        `Order #${orderId} cancelled.`;
+
+    cancelOrderInput.value = "";
+
+    await refreshMarket();
+}
+
+
+async function resetExchange() {
+    const response = await fetch("/reset", {
+        method: "POST"
+    });
+
+    const result = await response.json();
+
+    statusMessage.textContent =
+        result.status;
+
+    await refreshMarket();
+}
     async function refreshMarket() {
         await loadOrderBook();
         await loadTrades();
@@ -222,7 +412,15 @@
 
 
     form.addEventListener("submit", submitOrder);
+cancelOrderButton.addEventListener(
+    "click",
+    cancelOrder
+);
 
+resetButton.addEventListener(
+    "click",
+    resetExchange
+);
     orderTypeInput.addEventListener(
         "change",
         updatePriceInput
