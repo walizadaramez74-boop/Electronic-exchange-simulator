@@ -3,7 +3,11 @@
 A Python-based electronic exchange simulator implementing a limit order book with price-time priority, market and limit orders, partial fills, cancellations and automated testing.
 
 The project also includes a controlled market-microstructure experiment examining how order-book depth affects market-order slippage.
+## Live Demo
 
+The exchange is deployed as a containerised FastAPI application with an interactive web interface.
+
+[Launch the Electronic Exchange Simulator]https://electronic-exchange-simulator.onrender.com/
 ## Features
 
 - Limit and market orders
@@ -17,6 +21,10 @@ The project also includes a controlled market-microstructure experiment examinin
 - Automated testing with pytest
 - Liquidity and slippage simulation
 - Reproducible deep-vs-thin liquidity experiment
+- REST API built with FastAPI
+- Interactive browser interface
+- Docker containerisation
+- Cloud deployment
 
 ## Matching Logic
 
