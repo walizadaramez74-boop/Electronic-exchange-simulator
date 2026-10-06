@@ -245,3 +245,41 @@ python analysis/plot_results.py
 - Additional order types
 - More realistic stochastic order-flow models
 - Historical market-data calibration
+
+## Inventory-aware market-making research
+
+This extension submits maker quotes into the existing matching engine and accounts
+for executed fills, cash, inventory, average-cost realised PnL, mark-to-market
+unrealised PnL and per-unit fees. Quotes widen with past rolling volatility and
+shift down/up for long/short inventory. Outstanding quote quantities are capped
+so one-sided fills cannot breach the hard inventory limit.
+
+```bash
+python src/strategy_research.py --seeds 20 --steps 2000
+python -m pytest tests/test_market_making.py -q
+```
+
+Open `analysis/strategy/report.html`. CSV outputs contain event-level features,
+strategy metrics, paired multi-seed comparisons and a chronological 70/30
+order-book-imbalance regression holdout against a zero-price-change baseline.
+No fit uses holdout targets. Strategy PnL comparisons use identical external flow
+for each seed; results can favor either strategy.
+
+**Assumptions:** synthetic fair-value process; counterparty direction correlated
+with hidden future shocks; replenished background liquidity; passive maker
+quotes; no latency, historical feed, venue fees calibration or terminal liquidation.
+PnL is marked against synthetic fair value, including residual inventory.
+This is a research sandbox, not evidence of profitable live trading.
+
+CI runs research validation on Linux and uploads reproducible report artifacts.
+The pull-request template documents accounting, risk and model-review checks;
+it does not imply independent code review has occurred.
+
+A drawdown stop cancels outstanding strategy quotes and prevents new quotes.
+It leaves residual inventory marked to market, so subsequent losses can exceed
+the trigger threshold. It is a quoting stop, not a guaranteed loss cap.
+
+Counterparty flow uses price-limited immediate-or-cancel orders. The price budget
+is part of the external tape, so wider quotes can reduce fill rates; both
+strategies face identical budgets and directions. Residual IOC quantity is
+cancelled rather than left resting in the exchange book.

@@ -1,0 +1,19 @@
+name: Quant research validation
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pytest
+      - run: python -m pytest tests/test_market_making.py -q
+      - run: python src/strategy_research.py --seeds 5 --steps 1000
+      - uses: actions/upload-artifact@v4
+        with:
+          name: market-making-research
+          path: analysis/strategy/

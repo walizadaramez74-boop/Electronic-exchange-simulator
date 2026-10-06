@@ -220,3 +220,6 @@ __marimo__/
 __pycache__/
 .pytest_cache/
 .venv/
+
+# Regenerable strategy research outputs
+analysis/strategy/
